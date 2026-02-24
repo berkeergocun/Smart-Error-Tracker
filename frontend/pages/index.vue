@@ -157,9 +157,11 @@ const { data: stats, pending, refresh } = await useAsyncData('dashboard-stats', 
   } }>('/api/stats')
 )
 
-// Auto refresh every 30 seconds
-const interval = setInterval(refresh, 30000)
-onUnmounted(() => clearInterval(interval))
+// Auto refresh every 30 seconds – sadece client'ta çalışır
+onMounted(() => {
+  const interval = setInterval(refresh, 30000)
+  onUnmounted(() => clearInterval(interval))
+})
 
 const statsCards = computed(() => {
   const overview = stats.value?.data?.overview

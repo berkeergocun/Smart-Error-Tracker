@@ -276,21 +276,40 @@ async function main() {
   console.log('\n🌱  Smart Error Tracker – Seed başlatılıyor...\n');
   console.log(`📡  API: ${API_URL}\n`);
 
-  // 1) Domain'leri oluştur
+  // 1) Domain'leri oluştur ya da mevcut olanları getir
   const createdDomains: Array<{ uuid: string; name: string }> = [];
+
   for (const domain of domains) {
     try {
       const d = await createDomain(domain);
       createdDomains.push(d);
-      console.log(`✅  Domain: ${domain.name}  (${d.uuid})`);
-    } catch (e) {
-      console.log(`⚠️   Domain zaten mevcut veya hata: ${domain.name}`);
+      console.log(`✅  Domain oluşturuldu: ${domain.name}  (${d.uuid})`);
+    } catch {
+      // Domain zaten varsa listeden al
     }
   }
 
+  // Hiç domain oluşturulamadıysa mevcut domain'leri API'den çek
   if (createdDomains.length === 0) {
-    console.log('\n❌  Hiç domain oluşturulamadı. Backend çalışıyor mu?');
-    process.exit(1);
+    console.log('ℹ️   Domain\'ler zaten mevcut, veritabanındakiler kullanılacak...\n');
+    const res = await fetch(`${API_URL}/api/domains`);
+    if (!res.ok) {
+      console.log('\n❌  Backend\'e ulaşılamıyor. Backend çalışıyor mu?');
+      process.exit(1);
+    }
+    const data = await res.json();
+    const existing = (data.data || []) as Array<{ uuid: string; name: string }>;
+    createdDomains.push(...existing);
+
+    if (createdDomains.length === 0) {
+      console.log('\n❌  Hiç domain bulunamadı.');
+      process.exit(1);
+    }
+
+    for (const d of createdDomains) {
+      console.log(`📋  Mevcut domain: ${d.name}  (${d.uuid})`);
+    }
+    console.log('');
   }
 
   // 2) Her domain için son 7 güne yayılmış hatalar gönder
