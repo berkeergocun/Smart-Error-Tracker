@@ -56,7 +56,7 @@ services:
       NODE_ENV: production
       # OpenRouter API anahtarı – https://openrouter.ai (ücretsiz plan mevcut)
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-stepfun/step-3.5-flash:free}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.0-flash-exp:free}
       JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_production}
     ports:
       - "3001:3001"
