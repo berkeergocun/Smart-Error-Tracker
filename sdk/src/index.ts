@@ -28,29 +28,12 @@
 export { ErrorTrackerClient } from './client';
 export type { SmartErrorTrackerConfig, ErrorPayload, Breadcrumb, TrackerResponse } from './types';
 
-// Runtime detection - isomorphic export
-const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+// Node.js'den import et - Bun/Node.js ortamında bu dosya kullanılır
+// Browser için browser.ts kullanılır (package.json "browser" field)
+export {
+  init,
+  captureException,
+  captureMessage,
+} from './node';
 
-let _init: (config: import('./types').SmartErrorTrackerConfig) => unknown;
-let _captureException: (error: Error, extra?: Record<string, unknown>) => unknown;
-let _captureMessage: (message: string, severity?: 'low' | 'medium' | 'high' | 'critical') => unknown;
-let _addBreadcrumb: (breadcrumb: import('./types').Breadcrumb) => void;
-
-if (isBrowser) {
-  const m = await import('./browser');
-  _init = m.init;
-  _captureException = m.captureException;
-  _captureMessage = m.captureMessage;
-  _addBreadcrumb = (b) => m.addBreadcrumb(b);
-} else {
-  const m = await import('./node');
-  _init = m.init;
-  _captureException = m.captureException;
-  _captureMessage = m.captureMessage;
-  _addBreadcrumb = () => {};
-}
-
-export const init = _init!;
-export const captureException = _captureException!;
-export const captureMessage = _captureMessage!;
-export const addBreadcrumb = _addBreadcrumb!;
+export type { SmartErrorTrackerConfig as Config } from './types';
