@@ -22,8 +22,8 @@
 
       <!-- SDK Usage -->
       <div class="text-left bg-gray-900 rounded-lg p-4 overflow-x-auto">
-        <p class="text-xs text-gray-400 mb-2">Browser SDK kullanımı:</p>
-        <pre class="text-xs text-green-400">{{ browserSnippet }}</pre>
+        <p class="text-xs text-gray-400 mb-2">HTML sayfanıza ekleyin (tek satır, sıfır konfigürasyon):</p>
+        <pre class="text-xs text-green-400">{{ analyticsSnippet }}</pre>
       </div>
 
       <div class="flex gap-3 justify-center">
@@ -105,15 +105,9 @@ const loading = ref(false)
 const error = ref('')
 const created = ref<{ uuid: string; name: string } | null>(null)
 
-const browserSnippet = computed(() => {
+const analyticsSnippet = computed(() => {
   if (!created.value) return ''
-  return `<script>
-  window.SmartErrorTrackerConfig = {
-    apiUrl: '${config.public.apiUrl}',
-    domainId: '${created.value.uuid}'
-  };
-<\/script>
-<script src="${config.public.apiUrl}/sdk.js"><\/script>`
+  return `<script src="${config.public.apiUrl}/analytic/index.js?uuid=${created.value.uuid}"><\/script>`
 })
 
 async function createDomain() {

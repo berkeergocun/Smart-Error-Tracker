@@ -62,8 +62,11 @@ export const errorsRouter = new Elysia({ prefix: '/api/errors' })
   // Hata gönder (SDK kullanır)
   .post(
     '/ingest',
-    async ({ body, headers, error }) => {
-      const domainId = headers['x-domain-id'] || (body as Record<string, string>).domainId;
+    async ({ body, headers, query, error }) => {
+      // UUID: önce header, sonra query param (sendBeacon için)
+      const domainId = headers['x-domain-id']
+        || (query as Record<string, string>).uuid
+        || (body as Record<string, string>).domainId;
 
       if (!domainId) {
         return error(401, { success: false, message: 'Domain ID gerekli (x-domain-id header)' });

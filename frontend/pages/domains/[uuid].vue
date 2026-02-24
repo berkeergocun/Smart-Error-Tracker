@@ -45,10 +45,18 @@
 
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-muted-foreground mb-1.5 block">Browser (HTML içine gömün)</label>
-          <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-            <pre class="text-xs text-green-400">{{ browserSnippet }}</pre>
+          <label class="text-xs text-muted-foreground mb-1.5 block">Browser (HTML &lt;head&gt; veya &lt;body&gt; içine tek satır ekle)</label>
+          <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto flex items-center gap-3">
+            <pre class="text-xs text-green-400 flex-1">{{ analyticsSnippet }}</pre>
+            <button
+              class="p-1.5 hover:bg-white/10 rounded flex-shrink-0"
+              title="Kopyala"
+              @click="copySnippet"
+            >
+              <Icon name="lucide:copy" class="w-4 h-4 text-gray-400" />
+            </button>
           </div>
+          <p class="text-xs text-muted-foreground mt-1.5">Script yüklenir yüklenmez hata yakalamaya başlar. Başka konfigürasyon gerekmez.</p>
         </div>
         <div>
           <label class="text-xs text-muted-foreground mb-1.5 block">Node.js / Backend</label>
@@ -100,15 +108,9 @@ const { data, pending } = await useAsyncData(`domain-${route.params.uuid}`, () =
 
 const domain = computed(() => data.value?.data)
 
-const browserSnippet = computed(() => {
+const analyticsSnippet = computed(() => {
   if (!domain.value) return ''
-  return `<script>
-  window.SmartErrorTrackerConfig = {
-    apiUrl: '${config.public.apiUrl}',
-    domainId: '${domain.value.uuid}'
-  };
-<\/script>
-<script src="${config.public.apiUrl}/sdk.js"><\/script>`
+  return `<script src="${config.public.apiUrl}/analytic/index.js?uuid=${domain.value.uuid}"><\/script>`
 })
 
 const nodeSnippet = computed(() => {
@@ -118,13 +120,18 @@ const nodeSnippet = computed(() => {
 SmartErrorTracker.init({
   apiUrl: '${config.public.apiUrl}',
   domainId: '${domain.value.uuid}',
-  debug: false,
 });`
 })
 
 async function copyUUID() {
   if (domain.value?.uuid) {
     await navigator.clipboard.writeText(domain.value.uuid)
+  }
+}
+
+async function copySnippet() {
+  if (analyticsSnippet.value) {
+    await navigator.clipboard.writeText(analyticsSnippet.value)
   }
 }
 

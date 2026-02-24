@@ -85,6 +85,35 @@ const app = new Elysia()
 })();
   `;
   })
+  // ─── Analytic Script (/analytic/index.js?uuid=<domain-uuid>) ───────────────
+  // Kullanım: <script src="https://host:3001/analytic/index.js?uuid=xxx"></script>
+  // UUID script URL'inden otomatik okunur, ekstra konfigürasyon gerekmez.
+  .get('/analytic/index.js', async ({ query, set, request }) => {
+    const uuid = query.uuid as string | undefined;
+
+    set.headers['Content-Type'] = 'application/javascript; charset=utf-8';
+    set.headers['Cache-Control'] = 'public, max-age=86400'; // 24 saat cache
+
+    if (!uuid) {
+      set.status = 400;
+      set.headers['Content-Type'] = 'application/javascript; charset=utf-8';
+      return `console.error('[SmartErrorTracker] uuid parametresi eksik. Örnek: /analytic/index.js?uuid=<domain-uuid>');`;
+    }
+
+    // Domain doğrula
+    const { Domain } = await import('./models/Domain');
+    const domain = await Domain.findOne({ uuid }).lean();
+    if (!domain) {
+      set.status = 404;
+      return `console.error('[SmartErrorTracker] Geçersiz domain uuid: ${uuid}');`;
+    }
+
+    // Origin: script src URL'inden API base URL'ini çıkar
+    // (script aynı sunucudan servis edildiği için origin = bu backend'in URL'i)
+    const origin = new URL(request.url).origin;
+
+    return buildAnalyticScript(uuid, origin);
+  })
   .use(domainsRouter)
   .use(errorsRouter)
   .use(groupsRouter)
@@ -122,3 +151,151 @@ console.log(`
 `);
 
 export type App = typeof app;
+
+/**
+ * Domain UUID'si script URL'sine embed edilmiş,
+ * tek <script> tag'iyle çalışan analitik script üretici.
+ */
+function buildAnalyticScript(uuid: string, apiUrl: string): string {
+  return `/* Smart Error Tracker | domain: ${uuid} */
+(function () {
+  'use strict';
+
+  var API_URL = '${apiUrl}';
+  var DOMAIN_ID = '${uuid}';
+  var MAX_BREADCRUMBS = 30;
+  var breadcrumbs = [];
+
+  function addCrumb(type, message, data) {
+    breadcrumbs.push({ type: type, message: message, timestamp: new Date().toISOString(), data: data });
+    if (breadcrumbs.length > MAX_BREADCRUMBS) breadcrumbs.shift();
+  }
+
+  function send(payload) {
+    var body = JSON.stringify(Object.assign({
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      breadcrumbs: breadcrumbs.slice()
+    }, payload));
+
+    // sendBeacon tercihli (sayfa kapanırken kaybolmaz)
+    if (navigator.sendBeacon) {
+      var blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon(API_URL + '/api/errors/ingest?uuid=' + DOMAIN_ID, blob);
+    } else {
+      fetch(API_URL + '/api/errors/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-domain-id': DOMAIN_ID },
+        body: body,
+        keepalive: true
+      }).catch(function () {});
+    }
+  }
+
+  // ── Global JS hataları ─────────────────────────────────────────────────────
+  window.addEventListener('error', function (e) {
+    if (!e.message) return;
+    addCrumb('error', e.message, { source: e.filename, lineno: e.lineno });
+    send({
+      message: e.message,
+      type: 'javascript',
+      severity: 'high',
+      stack: e.error && e.error.stack,
+      source: e.filename,
+      lineno: e.lineno,
+      colno: e.colno
+    });
+  });
+
+  // ── Yakalanmamış Promise red'leri ─────────────────────────────────────────
+  window.addEventListener('unhandledrejection', function (e) {
+    var reason = e.reason;
+    var message = (reason && reason.message) ? reason.message : String(reason);
+    addCrumb('error', 'Unhandled rejection: ' + message.slice(0, 100));
+    send({
+      message: message,
+      type: 'promise',
+      severity: 'high',
+      stack: reason && reason.stack
+    });
+  });
+
+  // ── Fetch interceptor (ağ hatalarını yakala) ───────────────────────────────
+  var _fetch = window.fetch;
+  window.fetch = function (input, init) {
+    var reqUrl = typeof input === 'string' ? input : (input && input.url) || '';
+    var method = (init && init.method) || 'GET';
+    var t0 = Date.now();
+
+    // Kendi ingest isteğini izleme (sonsuz döngü önlemi)
+    if (reqUrl.indexOf('/analytic/') !== -1 || reqUrl.indexOf('/api/errors/ingest') !== -1) {
+      return _fetch.apply(window, arguments);
+    }
+
+    return _fetch.apply(window, arguments).then(function (res) {
+      var ms = Date.now() - t0;
+      if (!res.ok) {
+        addCrumb('fetch', method + ' ' + reqUrl + ' → ' + res.status, { ms: ms });
+        if (res.status >= 500) {
+          send({
+            message: 'HTTP ' + res.status + ': ' + method + ' ' + reqUrl,
+            type: 'network',
+            severity: 'medium',
+            metadata: { httpStatus: res.status, requestUrl: reqUrl, method: method, ms: ms }
+          });
+        }
+      } else {
+        addCrumb('fetch', method + ' ' + reqUrl + ' → ' + res.status, { ms: ms });
+      }
+      return res;
+    }).catch(function (err) {
+      var ms = Date.now() - t0;
+      addCrumb('fetch', method + ' ' + reqUrl + ' failed', { ms: ms });
+      send({
+        message: 'Network error: ' + method + ' ' + reqUrl,
+        type: 'network',
+        severity: 'high',
+        stack: err && err.stack,
+        metadata: { requestUrl: reqUrl, method: method, ms: ms }
+      });
+      throw err;
+    });
+  };
+
+  // ── Tıklama breadcrumbs ────────────────────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    var el = e.target;
+    if (!el) return;
+    var label = (el.textContent || '').trim().slice(0, 60)
+      || el.getAttribute('aria-label')
+      || el.tagName;
+    addCrumb('click', 'Click: ' + label, { tag: el.tagName, id: el.id || undefined });
+  }, { passive: true });
+
+  // ── Navigation breadcrumbs ─────────────────────────────────────────────────
+  var _push = history.pushState;
+  history.pushState = function () {
+    _push.apply(history, arguments);
+    addCrumb('navigation', 'Navigate: ' + (arguments[2] || location.href));
+  };
+  window.addEventListener('popstate', function () {
+    addCrumb('navigation', 'Popstate: ' + location.href);
+  });
+
+  // ── Public API ────────────────────────────────────────────────────────────
+  window.SmartErrorTracker = {
+    captureException: function (err, extra) {
+      send({ message: err.message, type: 'javascript', severity: 'high', stack: err.stack, metadata: extra });
+    },
+    captureMessage: function (msg, severity) {
+      send({ message: msg, type: 'custom', severity: severity || 'low' });
+    },
+    addBreadcrumb: function (type, message, data) {
+      addCrumb(type || 'custom', message, data);
+    }
+  };
+
+  console.debug('[SmartErrorTracker] Initialized ✓ domain=' + DOMAIN_ID);
+})();
+`;
+}
