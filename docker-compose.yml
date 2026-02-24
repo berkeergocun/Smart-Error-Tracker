@@ -54,8 +54,9 @@ services:
       MONGODB_URI: mongodb://root:smarterror123@mongodb:27017/smart_error_tracker?authSource=admin
       FRONTEND_URL: http://localhost:3000
       NODE_ENV: production
-      # Opsiyonel – AI analizi için buraya OpenAI API anahtarınızı girin
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # OpenRouter API anahtarı – https://openrouter.ai (ücretsiz plan mevcut)
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-stepfun/step-3.5-flash:free}
       JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_production}
     ports:
       - "3001:3001"

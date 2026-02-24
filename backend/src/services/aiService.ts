@@ -1,7 +1,17 @@
 import OpenAI from 'openai';
 
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'stepfun/step-3.5-flash:free';
+
+const openai = OPENROUTER_API_KEY
+  ? new OpenAI({
+      apiKey: OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:3000',
+        'X-Title': 'Smart Error Tracker',
+      },
+    })
   : null;
 
 export interface AIAnalysisResult {
@@ -32,7 +42,7 @@ export async function analyzeError(error: ErrorContext): Promise<AIAnalysisResul
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: OPENROUTER_MODEL,
       messages: [
         {
           role: 'system',
@@ -48,13 +58,16 @@ export async function analyzeError(error: ErrorContext): Promise<AIAnalysisResul
       ],
       temperature: 0.3,
       max_tokens: 1000,
-      response_format: { type: 'json_object' },
     });
 
     const content = response.choices[0]?.message?.content;
     if (!content) throw new Error('Empty AI response');
 
-    const parsed = JSON.parse(content);
+    // JSON bloğunu metinden çıkar (```json ... ``` veya düz JSON)
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+                      content.match(/(\{[\s\S]*\})/);
+    const jsonStr = jsonMatch ? jsonMatch[1] : content;
+    const parsed = JSON.parse(jsonStr.trim());
     return {
       summary: parsed.summary || 'Analiz tamamlanamadı',
       possibleCauses: Array.isArray(parsed.possibleCauses) ? parsed.possibleCauses : [],
