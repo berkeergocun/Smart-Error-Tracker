@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Frontend (backend build'ına dahil edilmez)
+frontend/
+
+# Docs
+docs/
+README.md
+LICENSE
+
+# Env dosyaları
+.env
+.env.local
+*/.env
+*/.env.local
+
+# Node modules (herbir servis kendi içinde yükler)
+node_modules
+backend/node_modules
+sdk/node_modules
+
+# Log dosyaları
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

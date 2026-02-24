@@ -1,23 +1,60 @@
-.PHONY: dev build start stop seed help
+.PHONY: help up down docker-up docker-down docker-build docker-logs \
+        backend frontend seed build-sdk install dev
 
 help:
-	@echo "Smart Error Tracker - Komutlar:"
 	@echo ""
-	@echo "  make up        - MongoDB Docker container'larını başlat"
-	@echo "  make down      - Docker container'larını durdur"
-	@echo "  make backend   - Backend geliştirici sunucusunu başlat"
-	@echo "  make frontend  - Frontend geliştirici sunucusunu başlat"
-	@echo "  make seed      - Örnek veriler oluştur"
-	@echo "  make build-sdk - SDK'yı derle"
-	@echo "  make install   - Tüm bağımlılıkları kur"
+	@echo "Smart Error Tracker - Komutlar"
+	@echo "================================"
+	@echo ""
+	@echo "  Docker (tek komut – tüm sistem):"
+	@echo "    make docker-up      - Tüm servisleri build edip başlat"
+	@echo "    make docker-down    - Tüm servisleri durdur"
+	@echo "    make docker-build   - Image'ları yeniden build et"
+	@echo "    make docker-logs    - Tüm container loglarını izle"
+	@echo "    make docker-restart - Backend + Frontend container'ı yeniden başlat"
+	@echo ""
+	@echo "  Yerel geliştirme:"
+	@echo "    make up        - Sadece MongoDB Docker container'larını başlat"
+	@echo "    make down      - Docker container'larını durdur"
+	@echo "    make install   - Tüm bağımlılıkları kur (bun install)"
+	@echo "    make backend   - Backend geliştirici sunucusunu başlat"
+	@echo "    make frontend  - Frontend geliştirici sunucusunu başlat"
+	@echo "    make seed      - Örnek veriler oluştur"
+	@echo "    make build-sdk - SDK'yı derle"
+	@echo ""
 
+# ─── Docker (tam stack) ────────────────────────────────────────────────────────
+docker-up:
+	@cp -n .env.example .env 2>/dev/null || true
+	docker compose up -d --build
+	@echo ""
+	@echo "✅ Tüm servisler başlatıldı:"
+	@echo "   Dashboard  → http://localhost:3000"
+	@echo "   API        → http://localhost:3001"
+	@echo "   Swagger    → http://localhost:3001/swagger"
+	@echo "   Mongo GUI  → http://localhost:8081 (admin/admin123)"
+	@echo ""
+
+docker-down:
+	docker compose down
+
+docker-build:
+	docker compose build --no-cache
+
+docker-logs:
+	docker compose logs -f
+
+docker-restart:
+	docker compose restart backend frontend
+
+# ─── Yerel geliştirme ──────────────────────────────────────────────────────────
 up:
-	docker-compose up -d
+	docker compose up -d mongodb mongo-express
 	@echo "✅ MongoDB başlatıldı: mongodb://localhost:27017"
 	@echo "✅ Mongo Express: http://localhost:8081 (admin/admin123)"
 
 down:
-	docker-compose down
+	docker compose down
 
 backend:
 	@echo "Backend başlatılıyor..."
