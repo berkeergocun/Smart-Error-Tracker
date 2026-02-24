@@ -18,47 +18,27 @@ Frontend ve backend hatalarını otomatik olarak toplar, parmak izi ile gruplar 
 ## 📸 Ekran Görüntüleri
 
 ### Dashboard – Genel Bakış
-<!-- Dashboard ekran görüntüsünü docs/screenshots/dashboard.png olarak ekleyin -->
-> 📷 `docs/screenshots/dashboard.png` dosyasını buraya ekleyin
-> ```md
-> ![Dashboard](docs/screenshots/dashboard.png)
-> ```
+![Dashboard](docs/screenshots/dashboard.png)
 
 ---
 
 ### Hata Listesi
-<!-- Hata listesi ekran görüntüsünü docs/screenshots/errors.png olarak ekleyin -->
-> 📷 `docs/screenshots/errors.png` dosyasını buraya ekleyin
-> ```md
-> ![Hata Listesi](docs/screenshots/errors.png)
-> ```
+![Hata Listesi](docs/screenshots/errors.png)
 
 ---
 
 ### Hata Detayı & AI Analizi
-<!-- Hata detay sayfası ekran görüntüsünü docs/screenshots/error-detail.png olarak ekleyin -->
-> 📷 `docs/screenshots/error-detail.png` dosyasını buraya ekleyin
-> ```md
-> ![Hata Detayı](docs/screenshots/error-detail.png)
-> ```
+![Hata Detayı](docs/screenshots/error-detail.png)
 
 ---
 
 ### Hata Grupları
-<!-- Grup listesi ekran görüntüsünü docs/screenshots/groups.png olarak ekleyin -->
-> 📷 `docs/screenshots/groups.png` dosyasını buraya ekleyin
-> ```md
-> ![Hata Grupları](docs/screenshots/groups.png)
-> ```
+![Hata Grupları](docs/screenshots/groups.png)
 
 ---
 
 ### Domain Yönetimi & Entegrasyon Kodu
-<!-- Domain detay sayfası ekran görüntüsünü docs/screenshots/domain-detail.png olarak ekleyin -->
-> 📷 `docs/screenshots/domain-detail.png` dosyasını buraya ekleyin
-> ```md
-> ![Domain Yönetimi](docs/screenshots/domain-detail.png)
-> ```
+![Domain Yönetimi](docs/screenshots/domain-detail.png)
 
 ---
 
