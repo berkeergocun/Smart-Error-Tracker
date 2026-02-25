@@ -32,7 +32,6 @@ docker-up:
 	@echo "   Dashboard  → http://localhost:3000"
 	@echo "   API        → http://localhost:3001"
 	@echo "   Swagger    → http://localhost:3001/swagger"
-	@echo "   Mongo GUI  → http://localhost:8081 (admin/admin123)"
 	@echo ""
 
 docker-down:
@@ -49,9 +48,9 @@ docker-restart:
 
 # ─── Yerel geliştirme ──────────────────────────────────────────────────────────
 up:
-	docker compose up -d mongodb mongo-express
-	@echo "✅ MongoDB başlatıldı: mongodb://localhost:27017"
-	@echo "✅ Mongo Express: http://localhost:8081 (admin/admin123)"
+	@cp -n .env.example .env 2>/dev/null || true
+	docker compose up -d mongodb
+	@echo "✅ MongoDB başlatıldı (iç ağ: mongodb:27017)"
 
 down:
 	docker compose down

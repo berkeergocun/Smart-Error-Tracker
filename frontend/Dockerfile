@@ -16,10 +16,9 @@ FROM deps AS builder
 
 COPY . .
 
-# Build sırasında backend API adresi (tarayıcıdan erişilecek URL)
-ARG NUXT_PUBLIC_API_URL=http://localhost:3001
-ENV NUXT_PUBLIC_API_URL=$NUXT_PUBLIC_API_URL
-
+# NOT: NUXT_PUBLIC_API_URL build time'a bakilmez.
+# Nuxt 3, NUXT_PUBLIC_* env degiskenlerini runtime'da container ENV'inden okur.
+# docker-compose.yml ya da Dokploy UI'dan set edilmesi yeterli.
 RUN bun run build
 
 # ─── Stage 3: Runner (Node.js – Nuxt SSR) ────────────────────────────────────
@@ -32,5 +31,7 @@ COPY --from=builder /app/.output ./
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
+# Nuxt/Nitro'nun tum arayüzleri dinlemesi icin (container icinde 0.0.0.0 olmali)
+ENV HOST=0.0.0.0
 
 CMD ["node", "server/index.mjs"]
