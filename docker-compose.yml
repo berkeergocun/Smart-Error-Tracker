@@ -12,11 +12,14 @@ services:
   # ─── Veritabanı ────────────────────────────────────────────────────────────
   mongodb:
     image: mongo:7.0
+    container_name: smart-error-tracker-mongo
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD zorunlu}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-smarterror123}
       MONGO_INITDB_DATABASE: smart_error_tracker
+    ports:
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
@@ -33,15 +36,16 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    container_name: smart-error-tracker-backend
     restart: unless-stopped
     environment:
       PORT: 3001
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD}@mongodb:27017/smart_error_tracker?authSource=admin
-      FRONTEND_URL: ${FRONTEND_URL:-}
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-root}:${MONGO_ROOT_PASSWORD:-smarterror123}@mongodb:27017/smart_error_tracker?authSource=admin
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       NODE_ENV: production
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.0-flash-exp:free}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET zorunlu}
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_production}
     ports:
       - "3001:3001"
     depends_on:
@@ -59,12 +63,12 @@ services:
   # ─── Frontend Dashboard ─────────────────────────────────────────────────────
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: smart-error-tracker-frontend
     restart: unless-stopped
     environment:
-      # Nuxt 3: NUXT_PUBLIC_* değişkenleri build sonrasında runtime'da override edilebilir
-      NUXT_PUBLIC_API_URL: ${NUXT_PUBLIC_API_URL:?NUXT_PUBLIC_API_URL zorunlu (örn: https://api.domain.com)}
+      NUXT_PUBLIC_API_URL: ${NUXT_PUBLIC_API_URL:-http://localhost:3001}
       NODE_ENV: production
       PORT: 3000
     ports:
