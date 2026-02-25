@@ -1,6 +1,7 @@
-# ─── Smart Error Tracker – Frontend Dashboard ────────────────────────────────
-# Build context: frontend/ dizini
-#   docker compose build frontend
+# ─── Smart Error Tracker – SDK ────────────────────────────────────────────────
+# Kullanım (standalone):
+#   docker build -t smart-error-tracker-sdk .
+#   docker run --rm -v $(pwd)/dist:/app/dist smart-error-tracker-sdk
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ─── Stage 1: Bağımlılıklar ──────────────────────────────────────────────────
@@ -15,22 +16,9 @@ RUN bun install
 FROM deps AS builder
 
 COPY . .
-
-# Build sırasında backend API adresi (tarayıcıdan erişilecek URL)
-ARG NUXT_PUBLIC_API_URL=http://localhost:3001
-ENV NUXT_PUBLIC_API_URL=$NUXT_PUBLIC_API_URL
-
 RUN bun run build
 
-# ─── Stage 3: Runner (Node.js – Nuxt SSR) ────────────────────────────────────
-FROM node:20-slim AS runner
+# ─── Stage 3: Artifact (sadece dist/ içerir) ─────────────────────────────────
+FROM scratch AS artifact
 
-WORKDIR /app
-
-COPY --from=builder /app/.output ./
-
-EXPOSE 3000
-ENV NODE_ENV=production
-ENV PORT=3000
-
-CMD ["node", "server/index.mjs"]
+COPY --from=builder /app/dist /dist
